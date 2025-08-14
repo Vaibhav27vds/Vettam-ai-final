@@ -53,7 +53,7 @@ export const Editor = () => {
         pageWidth: currentPageSize.width,   
         pageMargin: currentPageSize.margin,
         label: 'Page',    
-        showPageNumber: false,
+        showPageNumber: true,
       }),
       Highlight.configure({
         multicolor: true
