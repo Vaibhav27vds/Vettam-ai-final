@@ -120,3 +120,52 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+
+
+/* Reset all page-break styles from the extension */
+.page-break,
+.page-break::before,
+.page-break::after {
+  all: unset; /* remove all properties from library styles */
+}
+
+/* Then set your custom styles */
+.page-break {
+  display: block; /* ensure it's visible */
+  background-color: #f9fbfd;
+  height: 20px;
+  width: 100%;
+  margin: 20px 0;
+  position: relative;
+
+  /* Only top & bottom borders */
+  border-top: 1px solid #c7c7c7 !important;
+  border-bottom: 1px solid #c7c7c7 !important;
+  border-left: none !important;
+  border-right: none !important;
+}
+
+.page-break::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  color: #555;
+}
+
+/* Remove label when printing */
+@media print {
+  .page-break::after {
+    content: none !important;
+    display: none !important;
+  }
+}
+
+/* Remove label on screen only if you want no label in editor view */
+@media screen {
+  /* If you don't want a label at all, comment out or keep these */
+}
