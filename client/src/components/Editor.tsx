@@ -24,12 +24,12 @@ export interface PageSize {
 }
 
 export const pageSizes: PageSize[] = [
-  { name: 'A4', width: 816, height: 1056, margin: 96 }, // 210mm x 297mm
-  { name: 'A3', width: 1123, height: 1587, margin: 118 }, // 297mm x 420mm
-  { name: 'A5', width: 595, height: 842, margin: 71 }, // 148mm x 210mm
-  { name: 'Letter', width: 816, height: 1056, margin: 96 }, // 8.5" x 11"
-  { name: 'Legal', width: 816, height: 1344, margin: 96 }, // 8.5" x 14"
-  { name: 'Tabloid', width: 1056, height: 1632, margin: 96 }, // 11" x 17"
+  { name: 'A4', width: 816, height: 1056, margin: 96 },
+  { name: 'A3', width: 1123, height: 1587, margin: 118 }, 
+  { name: 'A5', width: 595, height: 842, margin: 71 }, 
+  { name: 'Letter', width: 816, height: 1056, margin: 96 }, 
+  { name: 'Legal', width: 816, height: 1344, margin: 96 }, 
+  { name: 'Tabloid', width: 1056, height: 1632, margin: 96 }, 
 ]
 
 export const Editor = () => {
@@ -73,7 +73,6 @@ export const Editor = () => {
     ],
     content: '<p>Start writing your document...</p>',
     onUpdate: ({ editor }) => {
-      // Auto-pagination logic - simplified for now
       const content = editor.getHTML()
       const contentHeight = editor.view.dom.scrollHeight
       const pageHeight = currentPageSize.height
@@ -88,9 +87,8 @@ export const Editor = () => {
   const handlePageSizeChange = (newPageSize: PageSize) => {
     setCurrentPageSize(newPageSize)
     
-    // Update editor configuration
+
     if (editor) {
-      // Update pagination extension
       editor.extensionManager.extensions.forEach((extension) => {
         if (extension.name === 'pagination') {
           extension.options.pageHeight = newPageSize.height
@@ -99,12 +97,10 @@ export const Editor = () => {
         }
       })
       
-      // Update editor attributes with inline styles
       const editorElement = editor.view.dom as HTMLElement
       editorElement.style.minHeight = `${newPageSize.height}px`
       editorElement.style.width = `${newPageSize.width}px`
       
-      // Force a re-render to apply new pagination settings
       editor.view.updateState(editor.state)
     }
   }
