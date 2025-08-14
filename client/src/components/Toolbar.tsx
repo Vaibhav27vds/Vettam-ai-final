@@ -14,17 +14,26 @@ import {
   AlignJustify,
   Subscript,
   Superscript,
-  Eye
+  Eye,
+  FileText
 } from 'lucide-react'
 import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { PageSize, pageSizes } from './Editor'
 
 interface EditorToolbarProps {
   editor: Editor | null
   onPreview: () => void
+  currentPageSize: PageSize
+  onPageSizeChange: (pageSize: PageSize) => void
 }
 
-export const Toolbar: React.FC<EditorToolbarProps> = ({ editor, onPreview }) => {
+export const Toolbar: React.FC<EditorToolbarProps> = ({ 
+  editor, 
+  onPreview, 
+  currentPageSize, 
+  onPageSizeChange 
+}) => {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [showHighlightPicker, setShowHighlightPicker] = useState(false)
 
@@ -52,8 +61,8 @@ export const Toolbar: React.FC<EditorToolbarProps> = ({ editor, onPreview }) => 
   return (
     <div className="w-full bg-[#F2EDF7] border-b border-gray-300 px-4 py-2">
       <div className="flex items-center w-full justify-between">
-        {/* Font Section - 20% */}
-        <div className="flex items-center flex-1 max-w-[20%]">
+        {/* Font Section - 18% */}
+        <div className="flex items-center flex-1 max-w-[18%]">
           <Select
             value={editor.getAttributes('textStyle').fontFamily || 'Arial'}
             onValueChange={(value) => editor.chain().focus().setFontFamily(value).run()}
@@ -73,8 +82,8 @@ export const Toolbar: React.FC<EditorToolbarProps> = ({ editor, onPreview }) => 
 
         <div className="h-8 w-px bg-gray-400 mx-1" />
 
-        {/* Font Type Section - 15% */}
-        <div className="flex items-center flex-1 max-w-[15%]">
+        {/* Font Type Section - 13% */}
+        <div className="flex items-center flex-1 max-w-[13%]">
           <Select
             value="paragraph"
             onValueChange={(value) => {
@@ -103,8 +112,8 @@ export const Toolbar: React.FC<EditorToolbarProps> = ({ editor, onPreview }) => 
 
         <div className="h-8 w-px bg-gray-400 mx-1" />
 
-        {/* Font Size Section - 10% */}
-        <div className="flex items-center flex-1 max-w-[10%]">
+        {/* Font Size Section - 9% */}
+        <div className="flex items-center flex-1 max-w-[9%]">
           <Select
             value={editor.getAttributes('textStyle').fontSize || '16px'}
             onValueChange={(value) => editor.chain().focus().setFontSize(value).run()}
@@ -124,8 +133,40 @@ export const Toolbar: React.FC<EditorToolbarProps> = ({ editor, onPreview }) => 
 
         <div className="h-8 w-px bg-gray-400 mx-1" />
 
-        {/* Text Formatting Section - 15% */}
-        <div className="flex items-center flex-1 max-w-[15%] justify-center">
+        {/* Page Size Section - 12% */}
+        <div className="flex items-center flex-1 max-w-[12%]">
+          <Select
+            value={currentPageSize.name}
+            onValueChange={(value) => {
+              const selectedPageSize = pageSizes.find(size => size.name === value)
+              if (selectedPageSize) {
+                onPageSizeChange(selectedPageSize)
+              }
+            }}
+          >
+            <SelectTrigger className="w-full rounded-none border-none bg-transparent">
+              <FileText className="w-4 h-4 mr-1" />
+              <SelectValue placeholder="Page Size" />
+            </SelectTrigger>
+            <SelectContent>
+              {pageSizes.map((pageSize) => (
+                <SelectItem key={pageSize.name} value={pageSize.name}>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{pageSize.name}</span>
+                    <span className="text-xs text-gray-500">
+                      {Math.round(pageSize.width * 0.264583)}mm × {Math.round(pageSize.height * 0.264583)}mm
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="h-8 w-px bg-gray-400 mx-1" />
+
+        {/* Text Formatting Section - 13% */}
+        <div className="flex items-center flex-1 max-w-[13%] justify-center">
           <Button
             variant={editor.isActive('bold') ? 'default' : 'ghost'}
             size="sm"
@@ -165,8 +206,8 @@ export const Toolbar: React.FC<EditorToolbarProps> = ({ editor, onPreview }) => 
 
         <div className="h-8 w-px bg-gray-400 mx-1" />
 
-        {/* Color and Highlight Section - 10% */}
-        <div className="flex items-center flex-1 max-w-[10%] justify-center">
+        {/* Color and Highlight Section - 9% */}
+        <div className="flex items-center flex-1 max-w-[9%] justify-center">
           <div className="relative flex-1">
             <Button
               variant="ghost"
@@ -226,8 +267,8 @@ export const Toolbar: React.FC<EditorToolbarProps> = ({ editor, onPreview }) => 
 
         <div className="h-8 w-px bg-gray-400 mx-1" />
 
-        {/* Alignment Section - 15% */}
-        <div className="flex items-center flex-1 max-w-[15%] justify-center">
+        {/* Alignment Section - 13% */}
+        <div className="flex items-center flex-1 max-w-[13%] justify-center">
           <Button
             variant={editor.isActive({ textAlign: 'left' }) ? 'default' : 'ghost'}
             size="sm"
@@ -267,8 +308,8 @@ export const Toolbar: React.FC<EditorToolbarProps> = ({ editor, onPreview }) => 
 
         <div className="h-8 w-px bg-gray-400 mx-1" />
 
-        {/* Line Spacing Section - 10% */}
-        <div className="flex items-center flex-1 max-w-[10%]">
+        {/* Line Spacing Section - 9% */}
+        <div className="flex items-center flex-1 max-w-[9%]">
           <Select
             defaultValue="1.5"
             onValueChange={(value) => {
@@ -290,8 +331,8 @@ export const Toolbar: React.FC<EditorToolbarProps> = ({ editor, onPreview }) => 
 
         <div className="h-8 w-px bg-gray-400 mx-1" />
 
-        {/* Sub/Superscript Section - 10% */}
-        <div className="flex items-center flex-1 max-w-[10%] justify-center">
+        {/* Sub/Superscript Section - 9% */}
+        <div className="flex items-center flex-1 max-w-[9%] justify-center">
           <Button
             variant={editor.isActive('subscript') ? 'default' : 'ghost'}
             size="sm"
@@ -313,8 +354,8 @@ export const Toolbar: React.FC<EditorToolbarProps> = ({ editor, onPreview }) => 
 
         <div className="h-8 w-px bg-gray-400 mx-1" />
 
-        {/* Preview Section - 10% */}
-        <div className="flex items-center flex-1 max-w-[10%]">
+        {/* Preview Section - 9% */}
+        <div className="flex items-center flex-1 max-w-[9%]">
           <Button
             variant="ghost"
             size="sm"
