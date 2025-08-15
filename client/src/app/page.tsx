@@ -1,10 +1,7 @@
 "use client"
 import { AppSidebar } from "@/components/app-sidebar";import Editor from "@/components/Editor";
-;
 import { SiteHeader } from "@/components/site-header";
-import { Toolbar } from "@/components/Toolbar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import Image from "next/image";
 
 export default function Home() {
   return (
@@ -17,7 +14,7 @@ export default function Home() {
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar  />
       <SidebarInset>
         <SiteHeader />
         <Editor />

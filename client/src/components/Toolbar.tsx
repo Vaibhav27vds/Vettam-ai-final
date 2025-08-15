@@ -15,7 +15,10 @@ import {
   Subscript,
   Superscript,
   Eye,
-  FileText
+  FileText,
+  Type,
+  Layout,
+  Ruler
 } from 'lucide-react'
 import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -26,16 +29,29 @@ interface EditorToolbarProps {
   onPreview: () => void
   currentPageSize: PageSize
   onPageSizeChange: (pageSize: PageSize) => void
+  hasHeader: boolean
+  hasFooter: boolean
+  onAddHeader: () => void
+  onAddFooter: () => void
+  onRemoveHeader: () => void
+  onRemoveFooter: () => void
 }
 
 export const Toolbar: React.FC<EditorToolbarProps> = ({ 
   editor, 
   onPreview, 
   currentPageSize, 
-  onPageSizeChange 
+  onPageSizeChange,
+  hasHeader,
+  hasFooter,
+  onAddHeader,
+  onAddFooter,
+  onRemoveHeader,
+  onRemoveFooter
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [showHighlightPicker, setShowHighlightPicker] = useState(false)
+  const [toolbarMode, setToolbarMode] = useState<'text' | 'page'>('text')
 
   if (!editor) {
     return null
@@ -58,296 +74,375 @@ export const Toolbar: React.FC<EditorToolbarProps> = ({
     '#FF00FF', '#00FFFF', '#FFA500', '#800080', '#008000'
   ]
 
+  const renderTextToolbar = () => (
+    <>
+      <div className="flex items-center flex-1 max-w-[18%]">
+        <Select
+          value={editor.getAttributes('textStyle').fontFamily || 'Arial'}
+          onValueChange={(value) => editor.chain().focus().setFontFamily(value).run()}
+        >
+          <SelectTrigger className="w-full rounded-none border-none bg-transparent">
+            <SelectValue placeholder="Font Family" />
+          </SelectTrigger>
+          <SelectContent>
+            {fontFamilies.map((font) => (
+              <SelectItem key={font} value={font}>
+                <span style={{ fontFamily: font }}>{font}</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[13%]">
+        <Select
+          value="paragraph"
+          onValueChange={(value) => {
+            if (value === 'paragraph') {
+              editor.chain().focus().setParagraph().run()
+            } else {
+              const level = parseInt(value.replace('h', '')) as 1 | 2 | 3 | 4 | 5 | 6
+              editor.chain().focus().setHeading({ level }).run()
+            }
+          }}
+        >
+          <SelectTrigger className="w-full rounded-none border-none bg-transparent">
+            <SelectValue placeholder="Heading" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="paragraph">Paragraph</SelectItem>
+            <SelectItem value="h1">Heading 1</SelectItem>
+            <SelectItem value="h2">Heading 2</SelectItem>
+            <SelectItem value="h3">Heading 3</SelectItem>
+            <SelectItem value="h4">Heading 4</SelectItem>
+            <SelectItem value="h5">Heading 5</SelectItem>
+            <SelectItem value="h6">Heading 6</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[9%]">
+        <Select
+          value={editor.getAttributes('textStyle').fontSize || '16px'}
+          onValueChange={(value) => editor.chain().focus().setFontSize(value).run()}
+        >
+          <SelectTrigger className="w-full rounded-none border-none bg-transparent">
+            <SelectValue placeholder="Size" />
+          </SelectTrigger>
+          <SelectContent>
+            {fontSizes.map((size) => (
+              <SelectItem key={size} value={size}>
+                {size}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[13%] justify-center">
+        <Button
+          variant={editor.isActive('bold') ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+        >
+          <Bold className="w-4 h-4" />
+        </Button>
+
+        <Button
+          variant={editor.isActive('italic') ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+        >
+          <Italic className="w-4 h-4" />
+        </Button>
+
+        <Button
+          variant={editor.isActive('underline') ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => editor.chain().focus().toggleUnderline().run()}
+        >
+          <Underline className="w-4 h-4" />
+        </Button>
+
+        <Button
+          variant={editor.isActive('strike') ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+        >
+          <Strikethrough className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[9%] justify-center">
+        <div className="relative flex-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-none border-none w-full"
+            onClick={() => setShowColorPicker(!showColorPicker)}
+          >
+            <Palette className="w-4 h-4" />
+          </Button>
+          {showColorPicker && (
+            <div className="absolute top-full mt-1 p-2 bg-white border rounded-md shadow-lg z-50">
+              <div className="grid grid-cols-5 gap-1">
+                {colors.map((color) => (
+                  <button
+                    key={color}
+                    className="w-6 h-6 rounded border"
+                    style={{ backgroundColor: color }}
+                    onClick={() => {
+                      editor.chain().focus().setColor(color).run()
+                      setShowColorPicker(false)
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="relative flex-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-none border-none w-full"
+            onClick={() => setShowHighlightPicker(!showHighlightPicker)}
+          >
+            <Highlighter className="w-4 h-4" />
+          </Button>
+          {showHighlightPicker && (
+            <div className="absolute top-full mt-1 p-2 bg-white border rounded-md shadow-lg z-50">
+              <div className="grid grid-cols-5 gap-1">
+                {colors.map((color) => (
+                  <button
+                    key={color}
+                    className="w-6 h-6 rounded border"
+                    style={{ backgroundColor: color }}
+                    onClick={() => {
+                      editor.chain().focus().setHighlight({ color }).run()
+                      setShowHighlightPicker(false)
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[13%] justify-center">
+        <Button
+          variant={editor.isActive({ textAlign: 'left' }) ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => editor.chain().focus().setTextAlign('left').run()}
+        >
+          <AlignLeft className="w-4 h-4" />
+        </Button>
+
+        <Button
+          variant={editor.isActive({ textAlign: 'center' }) ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => editor.chain().focus().setTextAlign('center').run()}
+        >
+          <AlignCenter className="w-4 h-4" />
+        </Button>
+
+        <Button
+          variant={editor.isActive({ textAlign: 'right' }) ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => editor.chain().focus().setTextAlign('right').run()}
+        >
+          <AlignRight className="w-4 h-4" />
+        </Button>
+
+        <Button
+          variant={editor.isActive({ textAlign: 'justify' }) ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => editor.chain().focus().setTextAlign('justify').run()}
+        >
+          <AlignJustify className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[9%]">
+        <Select
+          defaultValue="1.5"
+          onValueChange={(value) => {
+            console.log('Line spacing:', value)
+          }}
+        >
+          <SelectTrigger className="w-full rounded-none border-none bg-transparent">
+            <SelectValue placeholder="Spacing" />
+          </SelectTrigger>
+          <SelectContent>
+            {lineSpacings.map((spacing) => (
+              <SelectItem key={spacing} value={spacing}>
+                {spacing}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[9%] justify-center">
+        <Button
+          variant={editor.isActive('subscript') ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => editor.chain().focus().toggleSubscript().run()}
+        >
+          <Subscript className="w-4 h-4" />
+        </Button>
+
+        <Button
+          variant={editor.isActive('superscript') ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => editor.chain().focus().toggleSuperscript().run()}
+        >
+          <Superscript className="w-4 h-4" />
+        </Button>
+      </div>
+    </>
+  )
+
+  const renderPageToolbar = () => (
+    <>
+      <div className="flex items-center flex-1 max-w-[15%]">
+        <Select
+          value={currentPageSize.name}
+          onValueChange={(value) => {
+            const selectedPageSize = pageSizes.find(size => size.name === value)
+            if (selectedPageSize) {
+              onPageSizeChange(selectedPageSize)
+            }
+          }}
+        >
+          <SelectTrigger className="w-full rounded-none border-none bg-transparent">
+            <FileText className="w-4 h-4 mr-1" />
+            <SelectValue placeholder="Page Size" />
+          </SelectTrigger>
+          <SelectContent>
+            {pageSizes.map((pageSize) => (
+              <SelectItem key={pageSize.name} value={pageSize.name}>
+                <div className="flex flex-col">
+                  <span className="font-medium">{pageSize.name}</span>
+                  <span className="text-xs text-gray-500">
+                    {Math.round(pageSize.width * 0.264583)}mm × {Math.round(pageSize.height * 0.264583)}mm
+                  </span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[15%] justify-center">
+        <Button
+          variant={hasHeader ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={hasHeader ? onRemoveHeader : onAddHeader}
+        >
+          {hasHeader ? 'Remove Header' : 'Add Header'}
+        </Button>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[15%] justify-center">
+        <Button
+          variant={hasFooter ? 'default' : 'ghost'}
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={hasFooter ? onRemoveFooter : onAddFooter}
+        >
+          {hasFooter ? 'Remove Footer' : 'Add Footer'}
+        </Button>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[12%] justify-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => console.log('Adjust margins')}
+        >
+          Margins
+        </Button>
+      </div>
+
+      <div className="h-8 w-px bg-gray-400 mx-1" />
+
+      <div className="flex items-center flex-1 max-w-[12%] justify-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="rounded-none border-none flex-1"
+          onClick={() => console.log('Toggle rulers')}
+        >
+          <Ruler className="w-4 h-4 mr-1" />
+          Rulers
+        </Button>
+      </div>
+    </>
+  )
+
   return (
     <div className="w-full bg-[#F2EDF7] border-b border-gray-300 px-4 py-2">
       <div className="flex items-center w-full justify-between">
-        {/* Font Section - 18% */}
-        <div className="flex items-center flex-1 max-w-[18%]">
-          <Select
-            value={editor.getAttributes('textStyle').fontFamily || 'Arial'}
-            onValueChange={(value) => editor.chain().focus().setFontFamily(value).run()}
-          >
-            <SelectTrigger className="w-full rounded-none border-none bg-transparent">
-              <SelectValue placeholder="Font Family" />
-            </SelectTrigger>
-            <SelectContent>
-              {fontFamilies.map((font) => (
-                <SelectItem key={font} value={font}>
-                  <span style={{ fontFamily: font }}>{font}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="h-8 w-px bg-gray-400 mx-1" />
-
-        <div className="flex items-center flex-1 max-w-[13%]">
-          <Select
-            value="paragraph"
-            onValueChange={(value) => {
-              if (value === 'paragraph') {
-                editor.chain().focus().setParagraph().run()
-              } else {
-                const level = parseInt(value.replace('h', '')) as 1 | 2 | 3 | 4 | 5 | 6
-                editor.chain().focus().setHeading({ level }).run()
-              }
-            }}
-          >
-            <SelectTrigger className="w-full rounded-none border-none bg-transparent">
-              <SelectValue placeholder="Heading" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="paragraph">Paragraph</SelectItem>
-              <SelectItem value="h1">Heading 1</SelectItem>
-              <SelectItem value="h2">Heading 2</SelectItem>
-              <SelectItem value="h3">Heading 3</SelectItem>
-              <SelectItem value="h4">Heading 4</SelectItem>
-              <SelectItem value="h5">Heading 5</SelectItem>
-              <SelectItem value="h6">Heading 6</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="h-8 w-px bg-gray-400 mx-1" />
-
-  
-        <div className="flex items-center flex-1 max-w-[9%]">
-          <Select
-            value={editor.getAttributes('textStyle').fontSize || '16px'}
-            onValueChange={(value) => editor.chain().focus().setFontSize(value).run()}
-          >
-            <SelectTrigger className="w-full rounded-none border-none bg-transparent">
-              <SelectValue placeholder="Size" />
-            </SelectTrigger>
-            <SelectContent>
-              {fontSizes.map((size) => (
-                <SelectItem key={size} value={size}>
-                  {size}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="h-8 w-px bg-gray-400 mx-1" />
-
-  
         <div className="flex items-center flex-1 max-w-[12%]">
-          <Select
-            value={currentPageSize.name}
-            onValueChange={(value) => {
-              const selectedPageSize = pageSizes.find(size => size.name === value)
-              if (selectedPageSize) {
-                onPageSizeChange(selectedPageSize)
-              }
-            }}
-          >
-            <SelectTrigger className="w-full rounded-none border-none bg-transparent">
-              <FileText className="w-4 h-4 mr-1" />
-              <SelectValue placeholder="Page Size" />
-            </SelectTrigger>
-            <SelectContent>
-              {pageSizes.map((pageSize) => (
-                <SelectItem key={pageSize.name} value={pageSize.name}>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{pageSize.name}</span>
-                    <span className="text-xs text-gray-500">
-                      {Math.round(pageSize.width * 0.264583)}mm × {Math.round(pageSize.height * 0.264583)}mm
-                    </span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="h-8 w-px bg-gray-400 mx-1" />
-
-     
-        <div className="flex items-center flex-1 max-w-[13%] justify-center">
           <Button
-            variant={editor.isActive('bold') ? 'default' : 'ghost'}
+            variant={toolbarMode === 'text' ? 'default' : 'ghost'}
             size="sm"
             className="rounded-none border-none flex-1"
-            onClick={() => editor.chain().focus().toggleBold().run()}
+            onClick={() => setToolbarMode('text')}
           >
-            <Bold className="w-4 h-4" />
+            <Type className="w-4 h-4 mr-1" />
+            Text
           </Button>
-
+          
           <Button
-            variant={editor.isActive('italic') ? 'default' : 'ghost'}
+            variant={toolbarMode === 'page' ? 'default' : 'ghost'}
             size="sm"
             className="rounded-none border-none flex-1"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
+            onClick={() => setToolbarMode('page')}
           >
-            <Italic className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant={editor.isActive('underline') ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-none border-none flex-1"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-          >
-            <Underline className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant={editor.isActive('strike') ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-none border-none flex-1"
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-          >
-            <Strikethrough className="w-4 h-4" />
+            <Layout className="w-4 h-4 mr-1" />
+            Page
           </Button>
         </div>
 
         <div className="h-8 w-px bg-gray-400 mx-1" />
 
-        <div className="flex items-center flex-1 max-w-[9%] justify-center">
-          <div className="relative flex-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-none border-none w-full"
-              onClick={() => setShowColorPicker(!showColorPicker)}
-            >
-              <Palette className="w-4 h-4" />
-            </Button>
-            {showColorPicker && (
-              <div className="absolute top-full mt-1 p-2 bg-white border rounded-md shadow-lg z-50">
-                <div className="grid grid-cols-5 gap-1">
-                  {colors.map((color) => (
-                    <button
-                      key={color}
-                      className="w-6 h-6 rounded border"
-                      style={{ backgroundColor: color }}
-                      onClick={() => {
-                        editor.chain().focus().setColor(color).run()
-                        setShowColorPicker(false)
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="relative flex-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="rounded-none border-none w-full"
-              onClick={() => setShowHighlightPicker(!showHighlightPicker)}
-            >
-              <Highlighter className="w-4 h-4" />
-            </Button>
-            {showHighlightPicker && (
-              <div className="absolute top-full mt-1 p-2 bg-white border rounded-md shadow-lg z-50">
-                <div className="grid grid-cols-5 gap-1">
-                  {colors.map((color) => (
-                    <button
-                      key={color}
-                      className="w-6 h-6 rounded border"
-                      style={{ backgroundColor: color }}
-                      onClick={() => {
-                        editor.chain().focus().setHighlight({ color }).run()
-                        setShowHighlightPicker(false)
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="h-8 w-px bg-gray-400 mx-1" />
-
-  
-        <div className="flex items-center flex-1 max-w-[13%] justify-center">
-          <Button
-            variant={editor.isActive({ textAlign: 'left' }) ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-none border-none flex-1"
-            onClick={() => editor.chain().focus().setTextAlign('left').run()}
-          >
-            <AlignLeft className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant={editor.isActive({ textAlign: 'center' }) ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-none border-none flex-1"
-            onClick={() => editor.chain().focus().setTextAlign('center').run()}
-          >
-            <AlignCenter className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant={editor.isActive({ textAlign: 'right' }) ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-none border-none flex-1"
-            onClick={() => editor.chain().focus().setTextAlign('right').run()}
-          >
-            <AlignRight className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant={editor.isActive({ textAlign: 'justify' }) ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-none border-none flex-1"
-            onClick={() => editor.chain().focus().setTextAlign('justify').run()}
-          >
-            <AlignJustify className="w-4 h-4" />
-          </Button>
-        </div>
-
-        <div className="h-8 w-px bg-gray-400 mx-1" />
-
-  
-        <div className="flex items-center flex-1 max-w-[9%]">
-          <Select
-            defaultValue="1.5"
-            onValueChange={(value) => {
-              console.log('Line spacing:', value)
-            }}
-          >
-            <SelectTrigger className="w-full rounded-none border-none bg-transparent">
-              <SelectValue placeholder="Spacing" />
-            </SelectTrigger>
-            <SelectContent>
-              {lineSpacings.map((spacing) => (
-                <SelectItem key={spacing} value={spacing}>
-                  {spacing}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="h-8 w-px bg-gray-400 mx-1" />
-
-        <div className="flex items-center flex-1 max-w-[9%] justify-center">
-          <Button
-            variant={editor.isActive('subscript') ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-none border-none flex-1"
-            onClick={() => editor.chain().focus().toggleSubscript().run()}
-          >
-            <Subscript className="w-4 h-4" />
-          </Button>
-
-          <Button
-            variant={editor.isActive('superscript') ? 'default' : 'ghost'}
-            size="sm"
-            className="rounded-none border-none flex-1"
-            onClick={() => editor.chain().focus().toggleSuperscript().run()}
-          >
-            <Superscript className="w-4 h-4" />
-          </Button>
-        </div>
+        {toolbarMode === 'text' ? renderTextToolbar() : renderPageToolbar()}
 
         <div className="h-8 w-px bg-gray-400 mx-1" />
         
